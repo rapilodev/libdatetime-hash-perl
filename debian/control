@@ -1,0 +1,13 @@
+Source: libdatetime-hash-perl
+Section: perl
+Priority: optional
+Maintainer: Milan Chrobok <mc@radiopiloten.de>
+Build-Depends: debhelper-compat (= 12), perl, libicu-dev
+Standards-Version: 4.5.0
+
+Package: libdatetime-hash-perl
+Architecture: any
+Depends: ${perl:Depends}, ${shlibs:Depends}, ${misc:Depends}
+Description: Fast thread-safe datetime string to hash converter using ICU.
+ This module provides an XS implementation to parse datetime strings 
+ into localized hashes with zero Perl object overhead.
