@@ -1,11 +1,23 @@
-libdatetime-hash-perl (0.0.2~jammy) jammy; urgency=low
+libdatetime-hash-perl (0.0.4~jammy) noble; urgency=low
+
+  * Universal input
+
+ -- Milan Chrobok <mc@radiopiloten.de>  Fri, 26 Dec 2025 13:00:00 +0100
+
+libdatetime-hash-perl (0.0.4~noble) noble; urgency=low
+
+  * Universal input
+
+ -- Milan Chrobok <mc@radiopiloten.de>  Fri, 26 Dec 2025 13:00:00 +0100
+
+libdatetime-hash-perl (0.0.3~jammy) jammy; urgency=low
 
   * Initial release.
 
- -- Milan Chrobok <mc@radiopiloten.de>  Wed, 17 Dec 2025 13:00:00 +0100
+ -- Milan Chrobok <mc@radiopiloten.de>  Wed, 20 Dec 2025 13:00:00 +0100
 
-libdatetime-hash-perl (0.0.2~noble) noble; urgency=low
+libdatetime-hash-perl (0.0.3~noble) noble; urgency=low
 
   * Initial release.
 
- -- Milan Chrobok <mc@radiopiloten.de>  Wed, 17 Dec 2025 13:00:00 +0100
+ -- Milan Chrobok <mc@radiopiloten.de>  Wed, 20 Dec 2025 13:00:00 +0100
