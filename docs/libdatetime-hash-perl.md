@@ -1,30 +1,90 @@
-=head1 NAME
+```
+# NAME
 
-Datetime::Hash - Fast XS-based date formatting into hashes using ICU.
+**Datetime::Hash** - High-performance, thread-safe ICU-based datetime to hash converter.
 
-=head1 SYNOPSIS
+# SYNOPSIS
 
-    use Datetime::Hash qw(format_datetime format_legacy);
+use Datetime::Hash qw(format_datetime format_legacy);
 
-    # Modern Schema
-    my $hash = format_datetime("2025-12-17 13:15:00", "Europe/Berlin", "de_DE");
+# High-speed XS interface
+my $dt = format_datetime("2025-06-16T12:00:00", "Europe/Berlin", "de_DE");
 
-    # Legacy Schema (Compatible with 0.0.x)
-    my $old = format_legacy("2025-12-17 13:15:00", "Europe/Berlin");
 
-=head1 DESCRIPTION
+print $dt->{weekday_long};      # "Montag"
+print $dt->{date_name};         # "16.06.2025"
+print $old->{start_month_name}; # "December"
 
-Utilizes the ICU (International Components for Unicode) library to perform 
-high-speed date formatting directly in C.
+# DESCRIPTION
 
-=head2 FUNCTIONS
+Datetime::Hash is a Perl XS extension that leverages the ICU (International Components for Unicode) library to provide extremely fast datetime parsing and formatting. 
 
-=head3 format_datetime($str, $tz, $locale?, $prefix?)
+The module is optimized for high-throughput applications (like radio scheduling or log processing). It uses Thread-Local Storage (TLS) via Perl's MY_CXT system to cache ICU handles, avoiding the overhead of re-initializing locale data on every call.
 
-Returns a hashref with the professional schema (e.g., C<display_name>, C<timestamp>).
+---
 
-=head3 format_legacy($str, $tz, $locale?, $prefix?)
+# INTERFACE
 
-Returns a hashref with the original schema (e.g., C<date_name>, C<epoch>).
+## format_datetime($input, [$tz], [$locale], [$prefix])
 
-=cut
+The primary XS-level function.
+
+### Arguments:
+* $input: A Unix epoch (integer), ISO 8601 string (2025-12-26T23:45:00), or SQL string (2025-12-26 23:45:00).
+* $tz: ICU TimeZone ID (e.g., "Europe/Berlin"). Defaults to "UTC".
+* $locale: ICU Locale ID (e.g., "de_DE"). Defaults to "de_DE".
+* $prefix: String to prepend to all output keys. Defaults to "".
+
+### Returns:
+A HashRef containing calculated values, or undef on failure.
+
+---
+
+# DATA DICTIONARY (OUTPUT KEYS)
+
+Below are the keys returned in the HashRef. If a prefix is provided, it is prepended to these names.
+
+| Key | Format | Description |
+| :--- | :--- | :--- |
+| year | 2025 | 4-digit year |
+| month | 1-12 | Month number |
+| day | 1-31 | Day of month |
+| hour | 0-23 | Hour of day |
+| minute | 0-59 | Minutes |
+| second | 0-59 | Seconds |
+| epoch | 1735253344 | Unix timestamp |
+| dow_iso | 1-7 | Day of week (Monday=1) |
+| doy | 1-366 | Day of year |
+| date | YYYY-MM-DD | ISO date |
+| time | HH:MM:SS | ISO time |
+| time_hm | HH:MM | Short time |
+| datetime | YYYY-MM-DD HH:MM:SS | SQL combined format |
+| date_name | Locale specific | e.g., "26.12.2025" (de_DE) |
+| weekday_long | String | Full name (e.g., "Freitag") |
+| weekday_short| String | Short name (e.g., "Fr") |
+| month_long | String | Full name (e.g., "Dezember") |
+| month_short | String | Short name (e.g., "Dez") |
+| rfc3339 | ISO8601 Zulu | e.g., "2025-12-26T22:45:00Z" |
+| rfc822 | Email format | e.g., "Fri, 26 Dec 2025 23:45:00 +0100" |
+
+---
+
+# PARSING LOGIC
+
+The module uses a tiered fallback system implemented in C for maximum speed:
+1. IV Check: If the Perl scalar is an integer, it is processed directly as an epoch.
+2. ISO 8601: Detects the T separator. Supports offsets (Z, +01:00) and local-time formats.
+3. SQL Format: Detects space-separated date/time strings.
+4. ICU Default: Final attempt using the provided locale's default parser.
+
+# THREAD SAFETY
+
+This module is fully thread-safe for use with Perl ithreads. Each thread maintains its own internal cache of ICU formatters. The cache is automatically invalidated and refreshed if the function is called with a different $tz or $locale than the previous call within that thread.
+
+# DEPENDENCIES
+
+* ICU Libraries: libicui18n and libicuuc must be installed on the system.
+* Development Headers: libicu-dev (Debian/Ubuntu) is required for compilation.
+
+
+```

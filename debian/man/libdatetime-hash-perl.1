@@ -16,38 +16,95 @@
 .\}
 .TH "" "" "" "" ""
 .hy
-.PP
-=head1 NAME
-.PP
-Datetime::Hash - Fast XS-based date formatting into hashes using ICU.
-.PP
-=head1 SYNOPSIS
 .IP
 .nf
 \f[C]
+# NAME
+
+**Datetime::Hash** - High-performance, thread-safe ICU-based datetime to hash converter.
+
+# SYNOPSIS
+
 use Datetime::Hash qw(format_datetime format_legacy);
 
-# Modern Schema
-my $hash = format_datetime(\[dq]2025-12-17 13:15:00\[dq], \[dq]Europe/Berlin\[dq], \[dq]de_DE\[dq]);
+# High-speed XS interface
+my $dt = format_datetime(\[dq]2025-06-16T12:00:00\[dq], \[dq]Europe/Berlin\[dq], \[dq]de_DE\[dq]);
 
-# Legacy Schema (Compatible with 0.0.x)
-my $old = format_legacy(\[dq]2025-12-17 13:15:00\[dq], \[dq]Europe/Berlin\[dq]);
+
+print $dt->{weekday_long};      # \[dq]Montag\[dq]
+print $dt->{date_name};         # \[dq]16.06.2025\[dq]
+print $old->{start_month_name}; # \[dq]December\[dq]
+
+# DESCRIPTION
+
+Datetime::Hash is a Perl XS extension that leverages the ICU (International Components for Unicode) library to provide extremely fast datetime parsing and formatting. 
+
+The module is optimized for high-throughput applications (like radio scheduling or log processing). It uses Thread-Local Storage (TLS) via Perl\[aq]s MY_CXT system to cache ICU handles, avoiding the overhead of re-initializing locale data on every call.
+
+---
+
+# INTERFACE
+
+## format_datetime($input, [$tz], [$locale], [$prefix])
+
+The primary XS-level function.
+
+### Arguments:
+* $input: A Unix epoch (integer), ISO 8601 string (2025-12-26T23:45:00), or SQL string (2025-12-26 23:45:00).
+* $tz: ICU TimeZone ID (e.g., \[dq]Europe/Berlin\[dq]). Defaults to \[dq]UTC\[dq].
+* $locale: ICU Locale ID (e.g., \[dq]de_DE\[dq]). Defaults to \[dq]de_DE\[dq].
+* $prefix: String to prepend to all output keys. Defaults to \[dq]\[dq].
+
+### Returns:
+A HashRef containing calculated values, or undef on failure.
+
+---
+
+# DATA DICTIONARY (OUTPUT KEYS)
+
+Below are the keys returned in the HashRef. If a prefix is provided, it is prepended to these names.
+
+| Key | Format | Description |
+| :--- | :--- | :--- |
+| year | 2025 | 4-digit year |
+| month | 1-12 | Month number |
+| day | 1-31 | Day of month |
+| hour | 0-23 | Hour of day |
+| minute | 0-59 | Minutes |
+| second | 0-59 | Seconds |
+| epoch | 1735253344 | Unix timestamp |
+| dow_iso | 1-7 | Day of week (Monday=1) |
+| doy | 1-366 | Day of year |
+| date | YYYY-MM-DD | ISO date |
+| time | HH:MM:SS | ISO time |
+| time_hm | HH:MM | Short time |
+| datetime | YYYY-MM-DD HH:MM:SS | SQL combined format |
+| date_name | Locale specific | e.g., \[dq]26.12.2025\[dq] (de_DE) |
+| weekday_long | String | Full name (e.g., \[dq]Freitag\[dq]) |
+| weekday_short| String | Short name (e.g., \[dq]Fr\[dq]) |
+| month_long | String | Full name (e.g., \[dq]Dezember\[dq]) |
+| month_short | String | Short name (e.g., \[dq]Dez\[dq]) |
+| rfc3339 | ISO8601 Zulu | e.g., \[dq]2025-12-26T22:45:00Z\[dq] |
+| rfc822 | Email format | e.g., \[dq]Fri, 26 Dec 2025 23:45:00 +0100\[dq] |
+
+---
+
+# PARSING LOGIC
+
+The module uses a tiered fallback system implemented in C for maximum speed:
+1. IV Check: If the Perl scalar is an integer, it is processed directly as an epoch.
+2. ISO 8601: Detects the T separator. Supports offsets (Z, +01:00) and local-time formats.
+3. SQL Format: Detects space-separated date/time strings.
+4. ICU Default: Final attempt using the provided locale\[aq]s default parser.
+
+# THREAD SAFETY
+
+This module is fully thread-safe for use with Perl ithreads. Each thread maintains its own internal cache of ICU formatters. The cache is automatically invalidated and refreshed if the function is called with a different $tz or $locale than the previous call within that thread.
+
+# DEPENDENCIES
+
+* ICU Libraries: libicui18n and libicuuc must be installed on the system.
+* Development Headers: libicu-dev (Debian/Ubuntu) is required for compilation.
+
 \f[R]
 .fi
-.PP
-=head1 DESCRIPTION
-.PP
-Utilizes the ICU (International Components for Unicode) library to
-perform high-speed date formatting directly in C.
-.PP
-=head2 FUNCTIONS
-.PP
-=head3 format_datetime($str, $tz, $locale?, $prefix?)
-.PP
-Returns a hashref with the professional schema (e.g., C, C).
-.PP
-=head3 format_legacy($str, $tz, $locale?, $prefix?)
-.PP
-Returns a hashref with the original schema (e.g., C, C).
-.PP
-=cut
